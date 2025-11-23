@@ -18,7 +18,29 @@ export default function ExpenseScreen() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
+  const [filter, setFilter] = useState("all");
+  const[filteredExpenses, setFilteredExpenses] = useState([]);
 
+  function getFilteredExpenses() {
+    const now = new Date();
+
+    if (filter === "week") {
+        const start = new Date(now);
+        start.setDate(now.getDate() - now.getDay());
+        return expenses.filter(e => new Date(e.date) >= start);
+    }
+
+    if (filter === "month") {
+        const m = now.getMonth(), y = now.getFullYear();
+        return expenses.filter(e => {
+            const d = new Date(e.date);
+            return d.getMonth() === m && d.getFullYear() === y;
+        });
+    }
+    return expenses;
+  }
+
+    
 const loadExpenses = async () => {
     const rows = await db.getAllAsync(
       'SELECT * FROM expenses ORDER BY id DESC;'
@@ -42,9 +64,11 @@ const addExpense = async () => {
       return;
     }
 
+    const today = new Date().toISOString().split("T")[0];
+
     await db.runAsync(
-      'INSERT INTO expenses (amount, category, note) VALUES (?, ?, ?);',
-      [amountNumber, trimmedCategory, trimmedNote || null]
+      'INSERT INTO expenses (amount, category, note, date) VALUES (?, ?, ?, ?);',
+      [amountNumber, trimmedCategory, trimmedNote || null, today]
     );
 
     setAmount('');
@@ -53,6 +77,7 @@ const addExpense = async () => {
 
     loadExpenses();
   };
+
 
 const deleteExpense = async (id) => {
     await db.runAsync('DELETE FROM expenses WHERE id = ?;', [id]);
@@ -73,6 +98,7 @@ const renderExpense = ({ item }) => (
     </View>
   );
 
+ 
 useEffect(() => {
     async function setup() {
       await db.execAsync(`
@@ -80,7 +106,8 @@ useEffect(() => {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           amount REAL NOT NULL,
           category TEXT NOT NULL,
-          note TEXT
+          note TEXT,
+          date TEXT NOT NULL
         );
       `);
 
@@ -89,6 +116,10 @@ useEffect(() => {
 
     setup();
   }, []);
+
+  useEffect(() => {
+    setFilteredExpenses(getFilteredExpenses());
+  }, [expenses, filter]);
         
 return (
     <SafeAreaView style={styles.container}>
@@ -120,8 +151,14 @@ return (
         <Button title="Add Expense" onPress={addExpense} />
       </View>
 
+      <View style={styles.filters}>
+        <Button title="All" onPress={()=> setFilter('all')} />
+        <Button title="This Week" onPress={()=> setFilter('week')} />
+        <Button title="This Month" onPress={()=> setFilter('month')} />
+      </View>
+
       <FlatList
-        data={expenses}
+        data={filteredExpenses}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderExpense}
         ListEmptyComponent={
