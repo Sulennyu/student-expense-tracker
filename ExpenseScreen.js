@@ -20,6 +20,7 @@ export default function ExpenseScreen() {
   const [note, setNote] = useState('');
   const [filter, setFilter] = useState("all");
   const[filteredExpenses, setFilteredExpenses] = useState([]);
+  const [editing, setEditing] = useState(null);
 
   function getFilteredExpenses() {
     const now = new Date();
@@ -29,7 +30,6 @@ export default function ExpenseScreen() {
         start.setDate(now.getDate() - now.getDay());
         return expenses.filter(e => new Date(e.date) >= start);
     }
-
     if (filter === "month") {
         const m = now.getMonth(), y = now.getFullYear();
         return expenses.filter(e => {
@@ -46,10 +46,9 @@ export default function ExpenseScreen() {
 
   const categoryTotals = {};
   filteredExpenses.forEach(e=> {
-    categoryTotals[e.category] = (categoryTotals[e.catgeory] || 0) + Number(e.amount);
+    categoryTotals[e.category] = (categoryTotals[e.category] || 0) + Number(e.amount);
   });
 
-    
 const loadExpenses = async () => {
     const rows = await db.getAllAsync(
       'SELECT * FROM expenses ORDER BY id DESC;'
@@ -72,28 +71,35 @@ const addExpense = async () => {
       // Category is required
       return;
     }
-
     const today = new Date().toISOString().split("T")[0];
-
     await db.runAsync(
       'INSERT INTO expenses (amount, category, note, date) VALUES (?, ?, ?, ?);',
       [amountNumber, trimmedCategory, trimmedNote || null, today]
     );
-
     setAmount('');
     setCategory('');
     setNote('');
-
     loadExpenses();
   };
-
 
 const deleteExpense = async (id) => {
     await db.runAsync('DELETE FROM expenses WHERE id = ?;', [id]);
     loadExpenses();
   };
 
+    const saveEdit = async () => {
+    await db.runAsync(
+      `UPDATE expenses
+       SET amount = ?, category = ?, note = ?, date = ?
+       WHERE id = ?`,
+      [editing.amount,editing.category,editing.note,editing.date,editing.id]
+    );
+    setEditing(null);
+    loadExpenses();
+  };
+
 const renderExpense = ({ item }) => (
+    <TouchableOpacity onPress={() => setEditing(item)}>
     <View style={styles.expenseRow}>
       <View style={{ flex: 1 }}>
         <Text style={styles.expenseAmount}>${Number(item.amount).toFixed(2)}</Text>
@@ -105,9 +111,9 @@ const renderExpense = ({ item }) => (
         <Text style={styles.delete}>✕</Text>
       </TouchableOpacity>
     </View>
+    </TouchableOpacity>
   );
 
- 
 useEffect(() => {
     async function setup() {
       await db.execAsync(`
@@ -119,10 +125,8 @@ useEffect(() => {
           date TEXT NOT NULL
         );
       `);
-
       await loadExpenses();
     }
-
     setup();
   }, []);
 
@@ -133,6 +137,29 @@ useEffect(() => {
 return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.heading}>Student Expense Tracker</Text>
+      {editing &&(
+        <View style={styles.editModal}>
+             <Text style={styles.modalTitle}>Edit Expense</Text>
+            <TextInput 
+            style={styles.input}
+            value={editing.amount.toString()}
+            onChangeText={(text) => setEditing({...editing, amount: text})} />
+            <TextInput
+            style={styles.input} 
+            value={editing.category}
+            onChangeText={(text) => setEditing({...editing, category: text})} />
+            <TextInput
+            style={styles.input}
+            value={editing.note}
+            onChangeText={(text) => setEditing({...editing, note: text})} />
+             <TextInput
+             style={styles.input}
+            value={editing.date}
+            onChangeText={(text) => setEditing({...editing, date: text})} />
+            <Button title="save" onPress={saveEdit} />
+            <Button title="cancel" onPress={() => setEditing(null)} /> 
+        </View>
+      )}
 
       <View style={styles.form}>
         <TextInput
