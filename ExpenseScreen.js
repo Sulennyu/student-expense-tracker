@@ -40,6 +40,15 @@ export default function ExpenseScreen() {
     return expenses;
   }
 
+  const filterLabel = filter === "all" ? "All Time" : filter === "week" ? "This Week" : "This Month";
+
+  const total = filteredExpenses.reduce((sum,ex) => sum + Number(ex.amount), 0);
+
+  const categoryTotals = {};
+  filteredExpenses.forEach(e=> {
+    categoryTotals[e.category] = (categoryTotals[e.catgeory] || 0) + Number(e.amount);
+  });
+
     
 const loadExpenses = async () => {
     const rows = await db.getAllAsync(
@@ -155,6 +164,16 @@ return (
         <Button title="All" onPress={()=> setFilter('all')} />
         <Button title="This Week" onPress={()=> setFilter('week')} />
         <Button title="This Month" onPress={()=> setFilter('month')} />
+      </View>
+
+      <Text style={{ fontSize: 20, fontWeight:"bold"}}>
+        Total Spending ({filterLabel}): ${total.toFixed(2)}
+      </Text>
+
+      <View>
+        {Object.entries(categoryTotals).map(([cat, amt]) => (
+            <Text key={cat}> {cat}: ${amt.toFixed(2)}</Text>
+        ))}
       </View>
 
       <FlatList
