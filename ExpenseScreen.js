@@ -39,7 +39,6 @@ export default function ExpenseScreen() {
     }
     return expenses;
   }
-
   const filterLabel = filter === "all" ? "All Time" : filter === "week" ? "This Week" : "This Month";
 
   const total = filteredExpenses.reduce((sum,ex) => sum + Number(ex.amount), 0);
@@ -63,10 +62,8 @@ const addExpense = async () => {
       // Basic validation: ignore invalid or non-positive amounts
       return;
     }
-
     const trimmedCategory = category.trim();
     const trimmedNote = note.trim();
-
     if (!trimmedCategory) {
       // Category is required
       return;
@@ -87,7 +84,7 @@ const deleteExpense = async (id) => {
     loadExpenses();
   };
 
-    const saveEdit = async () => {
+const saveEdit = async () => {
     await db.runAsync(
       `UPDATE expenses
        SET amount = ?, category = ?, note = ?, date = ?
@@ -143,19 +140,23 @@ return (
             <TextInput 
             style={styles.input}
             value={editing.amount.toString()}
-            onChangeText={(text) => setEditing({...editing, amount: text})} />
+            onChangeText={(text) => setEditing({...editing, amount: text})} 
+            placeholder="Amount"/>
             <TextInput
             style={styles.input} 
             value={editing.category}
-            onChangeText={(text) => setEditing({...editing, category: text})} />
+            onChangeText={(text) => setEditing({...editing, category: text})} 
+            placeholder="Category"/>
             <TextInput
             style={styles.input}
             value={editing.note}
-            onChangeText={(text) => setEditing({...editing, note: text})} />
+            onChangeText={(text) => setEditing({...editing, note: text})} 
+            placeholder="Note (optional)"/>
              <TextInput
              style={styles.input}
             value={editing.date}
-            onChangeText={(text) => setEditing({...editing, date: text})} />
+            onChangeText={(text) => setEditing({...editing, date: text})} 
+            placeholder="YYYY-MM-DD"/>
             <Button title="save" onPress={saveEdit} />
             <Button title="cancel" onPress={() => setEditing(null)} /> 
         </View>
