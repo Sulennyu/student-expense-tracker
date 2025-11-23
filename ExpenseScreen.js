@@ -40,8 +40,7 @@ export default function ExpenseScreen() {
     return expenses;
   }
   const filterLabel = filter === "all" ? "All Time" : filter === "week" ? "This Week" : "This Month";
-
-  const total = filteredExpenses.reduce((sum,ex) => sum + Number(ex.amount), 0);
+  const total = filteredExpenses.reduce((acc,expense) => acc + Number(expense.amount), 0);
 
   const categoryTotals = {};
   filteredExpenses.forEach(e=> {
@@ -194,7 +193,7 @@ return (
         <Button title="This Month" onPress={()=> setFilter('month')} />
       </View>
 
-      <Text style={{ fontSize: 20, fontWeight:"bold"}}>
+       <Text style={[styles.totalText,{ fontSize: 22, fontWeight:"bold"}]}>
         Total Spending ({filterLabel}): ${total.toFixed(2)}
       </Text>
 
@@ -275,5 +274,12 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 12,
     fontSize: 12,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fbbf24',
+    marginBottom: 12,
+    textAlign: 'center',
   },
 });
